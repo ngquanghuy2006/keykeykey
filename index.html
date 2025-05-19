@@ -1,0 +1,358 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><pre><code style="white-space: pre-wrap; word-break: break-word; overflow-x: hidden; max-width: 100%; overflow-y: auto; background: #0a0a0a; color: #ccffcc; padding: 15px; border-radius: 8px; scrollbar-width: thin; scrollbar-color: #00ff88 #0a0a0a; font-size: 0.85rem; font-family: monospace;">
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Key Tool Pro by Nguyễn Quang Huy - Hacker dashboard với key 24h, MP3 player, matrix rain, và giao diện neon công nghệ vũ trụ.">
+<meta name="keywords" content="key tool, mp3 player, hacker dashboard, matrix rain, Nguyễn Quang Huy">
+<meta name="author" content="Nguyễn Quang Huy">
+<meta property="og:title" content="Key Tool Pro - Nguyễn Quang Huy">
+<meta property="og:description" content="Hacker dashboard với key 24h, MP3 player, và hiệu ứng matrix rain.">
+<meta property="og:image" content="https://files.catbox.moe/m772v3.jpg">
+<title>🔑 Key Tool Pro</title>
+<link rel="icon" href="https://files.catbox.moe/m772v3.jpg">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:monospace;background:#0a0a0a;color:#ccffcc;overflow-x:hidden}
+.container{max-width:1200px;margin:0 auto;padding:20px;display:grid;grid-template-areas:"header" "key" "mp3" "admin" "footer";grid-gap:15px;align-items:start}
+canvas{position:fixed;top:0;left:0;z-index:-1;opacity:.25}
+@keyframes neonPulse{0%,100%{border-color:#00ff88;filter:drop-shadow(0 0 5px #00ff88)}50%{border-color:#cc00ff;filter:drop-shadow(0 0 5px #cc00ff)}}
+@keyframes wave{0%{background-position:0 0}100%{background-position:200% 0}}
+.header{grid-area:header;text-align:center;padding:1rem}
+.header h1{font-size:1.8rem;background:linear-gradient(to right,#00ff88,#cc00ff,#ff004d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 4px #00ff88}
+.datetime{font-size:.9rem;color:#ccffcc80;margin-top:5px}
+.section{opacity:0;transform:scale(.95);transition:opacity .5s ease,transform .5s ease;will-change:transform,opacity}
+.section.visible{opacity:1;transform:scale(1)}
+.key-card{grid-area:key;background:rgba(255,255,255,.05);backdrop-filter:blur(5px);border-radius:10px;padding:15px;max-width:500px;margin:0 auto;border:1px solid #00ff88;animation:neonPulse 3s infinite;transform:scale(1);transition:transform .3s ease}
+.key-card:hover{transform:scale(1.05) rotate3d(1,1,0,3deg)}
+.key-info{display:grid;grid-template-columns:80px 1fr;gap:10px;align-items:center}
+.key-avatar img{width:60px;height:60px;border-radius:50%;border:2px solid #cc00ff;text-shadow:0 0 4px #cc00ff}
+.key-details{font-size:.85rem;font-weight:500}
+.key-details h3{font-size:1.1rem;color:#ffd700;text-shadow:0 0 4px #ffd700}
+.key-details p{margin:3px 0;color:#ccffcccc}
+.key-details strong{text-shadow:0 0 4px #00ff88}
+.key-value{font-weight:bold;text-shadow:0 0 4px #00ff88}
+.btn{background:linear-gradient(45deg,#00ff88,#cc00ff);border:1px solid #00ff88;border-radius:6px;padding:8px 15px;color:#ccffcc;font-size:.9rem;font-family:monospace;cursor:pointer;transition:transform .3s ease,box-shadow .3s ease,filter .3s ease;display:inline-flex;align-items:center;gap:4px}
+.btn:hover{transform:scale(1.05);box-shadow:0 0 8px #00ff88;filter:brightness(1.2)}
+.btn svg{width:16px;height:16px}
+.zalo-btn{text-decoration:none;padding:8px 15px}
+.audio-controls button{width:36px;height:36px;padding:0;justify-content:center}
+.mp3-player{grid-area:mp3;background:rgba(255,255,255,.05);backdrop-filter:blur(5px);border-radius:10px;padding:15px;max-width:450px;margin:0 auto;border:1px solid #cc00ff;animation:neonPulse 3s infinite;transform:scale(1);transition:transform .3s ease}
+.mp3-player:hover{transform:scale(1.05) rotate3d(1,-1,0,3deg)}
+.mp3-player h2{font-size:1.2rem;color:#00ff88;text-shadow:0 0 4px #00ff88;margin-bottom:10px}
+.audio-controls{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.progress-bar{flex-grow:1;height:4px;background:#ccffcc33;border-radius:4px;overflow:hidden;cursor:pointer}
+.progress{width:0;height:100%;background:linear-gradient(45deg,#00ff88,#cc00ff);animation:wave 3s infinite linear;background-size:200% 100%}
+.volume-slider{width:60px;background:#ccffcc33;border-radius:4px}
+.playlist{max-height:200px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#00ff88 #0a0a0a;display:flex;flex-direction:column}
+.playlist-item{display:flex;align-items:center;gap:8px;padding:8px;background:rgba(255,255,255,.03);margin:3px 0;border-radius:8px;cursor:pointer;transition:background .3s ease,transform .3s ease;will-change:transform}
+.playlist-item:hover{background:rgba(255,255,255,.1);transform:scale(1.02)}
+.playlist-item.active{background:linear-gradient(45deg,#00ff88,#cc00ff);animation:wave 4s infinite linear;background-size:200% 100%}
+.playlist-item img{width:40px;height:40px;border-radius:8px}
+.playlist-item span{font-size:.9rem}
+.admin-section{grid-area:admin;background:rgba(255,255,255,.05);backdrop-filter:blur(5px);border-radius:10px;padding:15px;max-width:300px;margin:0 auto;border:1px solid #ffd700;animation:neonPulse 3s infinite;transform:scale(1);transition:transform .3s ease}
+.admin-section:hover{transform:scale(1.05) rotate3d(-1,1,0,3deg)}
+.admin-section h2{font-size:1.1rem;color:#ffd700;text-shadow:0 0 4px #ffd700}
+.admin-avatar img{width:80px;height:80px;border-radius:50%;border:2px solid #00ff88;text-shadow:0 0 4px #00ff88}
+.admin-avatar img:hover{transform:scale(1.1)}
+.admin-section p{font-size:.85rem;color:#ccffcccc;margin:5px 0}
+.toast{position:fixed;bottom:20px;right:20px;background:linear-gradient(45deg,#00ff88,#cc00ff);color:#ccffcc;padding:8px 15px;border-radius:6px;opacity:0;transition:opacity .5s ease;font-size:.9rem}
+.toast.show{opacity:1}
+.footer{grid-area:footer;text-align:center;padding:20px 0;color:#ccffcc80;font-size:.8rem}
+@media (max-width:768px){
+.container{grid-template-areas:"header" "key" "mp3" "admin" "footer";grid-template-columns:1fr}
+.key-card,.mp3-player,.admin-section{width:100%;max-width:100%;margin:0}
+.audio-controls{flex-wrap:wrap}
+.key-info{grid-template-columns:80px 1fr}
+.key-avatar img,.admin-avatar img{width:60px;height:60px}
+.header h1{font-size:1.6rem}
+.key-details h3,.mp3-player h2,.admin-section h2{font-size:1rem}
+.key-details p,.playlist-item span,.admin-section p{font-size:.8rem}
+.btn{font-size:.8rem;padding:6px 12px}
+.btn svg{width:14px;height:14px}
+.audio-controls button{width:32px;height:32px}
+}
+</style>
+</head>
+<body>
+<canvas id="matrix"></canvas>
+<div class="container">
+<div class="header section">
+<h1>🔑 Key Tool Pro</h1>
+<div class="datetime" id="datetime"></div>
+</div>
+<div class="key-card section">
+<div class="key-info">
+<div class="key-avatar">
+<img src="https://files.catbox.moe/m772v3.jpg" alt="Key Avatar">
+</div>
+<div class="key-details">
+<h3>Key Tool 24h</h3>
+<p><strong>Key:</strong> <span class="key-value" id="key-value">ABCD-1234-EFGH-5678</span></p>
+<p><strong>Thiết bị:</strong> Android/iOS</p>
+<p><strong>Thời hạn:</strong> 24 giờ (Hết hạn: 20/05/2025)</p>
+<button class="btn copy-btn" onclick="copyKey()">
+<svg viewBox="0 0 24 24" fill="none" stroke="#ccffcc" stroke-width="2">
+<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+<rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+</svg> Copy Key
+</button>
+</div>
+</div>
+</div>
+<div class="mp3-player section">
+<h2>🎵 MP3 Terminal</h2>
+<div class="audio-controls">
+<button class="btn" onclick="togglePlay()">
+<svg viewBox="0 0 24 24" fill="#ccffcc">
+<path id="play-icon" d="M5 3l14 9-14 9V3z"></path>
+</svg>
+</button>
+<button class="btn" onclick="previousSong()">
+<svg viewBox="0 0 24 24" fill="none" stroke="#ccffcc" stroke-width="2">
+<path d="M21 15V9"></path>
+<path d="M15 3l-6 6 6 6"></path>
+</svg>
+</button>
+<button class="btn" onclick="nextSong()">
+<svg viewBox="0 0 24 24" fill="none" stroke="#ccffcc" stroke-width="2">
+<path d="M3 15V9"></path>
+<path d="M9 3l6 6-6 6"></path>
+</svg>
+</button>
+<div class="progress-bar" onclick="seek(event)">
+<div class="progress" id="progress"></div>
+</div>
+<input type="range" class="volume-slider" min="0" max="1" step="0.01" value="1" oninput="setVolume(this.value)">
+</div>
+<audio id="audio-player" ontimeupdate="updateProgress()"></audio>
+<div class="playlist"></div>
+</div>
+<div class="admin-section section">
+<h2>👤 Admin: Nguyễn Quang Huy</h2>
+<div class="admin-avatar">
+<img src="https://files.catbox.moe/m772v3.jpg" alt="Admin Avatar">
+</div>
+<p>Contact: <a href="https://zalo.me/0868371089" target="_blank" class="btn zalo-btn">Zalo: 0868371089</a></p>
+</div>
+<div class="footer section">
+<p>© 2025 Key Tool Pro by Nguyễn Quang Huy. All rights reserved.</p>
+</div>
+<div class="toast" id="toast">Key copied!</div>
+</div>
+<audio id="click-sound" src="https://www.soundjay.com/buttons/button-09.mp3"></audio>
+<script>
+const musicFiles=["Nỗi Đau Mình Anh Remix.mp3","Chuỗi Ngày Vắng Em Remix.mp3","Người Ta Không Yêu Em Đâu Remix.mp3","Em Cũng Vô Tình Remix.mp3","Quên Anh Trong Từng Cơn Đau Remix.mp3","Kẹo Bông Gòn Remix.mp3","Ghét Chính Anh Remix.mp3","Bạn Thân Ơi Remix.mp3","Nhiều Chông Gai Remix.mp3","Anh Em Khu 2 Remix.mp3","Em Hát Ai Nghe Remix.mp3","Mở Lối Cho Em Remix.mp3","Nụ Cười Không Vui Remix.mp3","Từng Là Của Nhau Remix.mp3","Yêu Em Nhưng Không Với Tới Remix.mp3","Chuyện 10 Năm Remix.mp3","Cô Gái À Em Đừng Khóc Remix.mp3","Yêu Em Nhưng Không Với Tới Remix.mp3","Tình Đẹp Cũng Tàn Remix.mp3","Nếu Em Không Hạnh Phúc Remix.mp3","Nếu E Ko Hạnh Phúc Remix.mp3","Đổi Tình Đổi Áo Remix.mp3","Vừa Lòng Em Chưa Remix.mp3","Rồi Mình Sẽ Hạnh Phúc Remix.mp3","Dù Cho Tận Thế Remix.mp3","Mãi Là Anh Em Remix.mp3","Khi Bạn Cần Có Tôi Đây Remix.mp3","Thay Thế Remix.mp3","Cảm Ơn Em x Em Là Của Anh Remix.mp3","Nơi Vực Nơi Trời Remix.mp3","Hãy Xem Là Giấc Mơ Remix.mp3","Em Say Rồi Remix.mp3","Ngỡ Như Là Giấc Mơ Remix.mp3","Khu Tao Sống Remix.mp3","Nơi Đâu Tìm Thấy Em Remix.mp3","Em Sẽ Là Người Ra Đi Remix.mp3","Không Lấy Được Vợ Remix.mp3","Mất Kết Nối Remix.mp3","Em Ơi Đừng Khóc 2IN1 Remix.mp3","Đắng Cay Tuổi Đôi Mươi Remix.mp3","Nonstop 3IN1 Remix.mp3","Mưa Rơi Vào Phòng Remix.mp3","Liều Thuốc Cho Trái Tym Remix.mp3","Em Ơi Anh Phải Làm Sao Remix.mp3","Dẫu Anh Không Nhìn Thấy Remix.mp3","Vách Ngọc Ngà x Hoa Tương Tư Remix.mp3","Sai Lầm Của Anh x Anh Làm Gì Sai Remix.mp3","Sai Cách Yêu Remix.mp3","Này Cô Em Gái Sì Tin Remix.mp3","Nonstop 4in1 Remix.mp3"],
+placeholderMp3=["https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3","https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3","https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"],
+canvas=document.getElementById('matrix'),
+ctx=canvas.getContext('2d');
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+const chars='アカサタナハマヤラワ0123456789ABCDEF',
+fontSize=10,
+columns=Math.floor(canvas.width/(fontSize*2)),
+drops=new Array(columns).fill(0);
+let frameCount=0;
+function drawMatrix(){
+if(frameCount%4)return;
+ctx.fillStyle='rgba(10,10,10,0.05)';
+ctx.fillRect(0,0,canvas.width,canvas.height);
+ctx.fillStyle='#00ff88';
+ctx.font=fontSize+'px monospace';
+drops.forEach((y,i)=>{
+const text=chars.charAt(Math.floor(Math.random()*chars.length));
+ctx.fillText(text,i*fontSize*2,y*fontSize);
+if(y*fontSize>canvas.height&&Math.random()>.975)drops[i]=0;
+drops[i]++;
+});
+frameCount++;
+}
+function animateMatrix(){
+requestAnimationFrame(animateMatrix);
+drawMatrix();
+}
+animateMatrix();
+window.addEventListener('resize',()=>{
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+});
+function updateDateTime(){
+const now=new Date();
+document.getElementById('datetime').textContent=now.toLocaleString('vi-VN',{weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
+}
+setInterval(updateDateTime,1000);
+updateDateTime();
+function copyKey(){
+const key=document.getElementById('key-value').textContent;
+try{
+navigator.clipboard.writeText(key).then(()=>{
+showToast('Key copied: '+key);
+playSound();
+}).catch(err=>{
+console.error('Clipboard error:',err);
+fallbackCopy(key);
+});
+}catch(err){
+fallbackCopy(key);
+}
+}
+function fallbackCopy(text){
+const textarea=document.createElement('textarea');
+textarea.value=text;
+document.body.appendChild(textarea);
+textarea.select();
+try{
+document.execCommand('copy');
+showToast('Key copied: '+text);
+playSound();
+}catch(err){
+console.error('Fallback copy error:',err);
+showToast('Copy failed!');
+}
+document.body.removeChild(textarea);
+}
+function showToast(msg){
+const toast=document.getElementById('toast');
+toast.textContent=msg;
+toast.classList.add('show');
+setTimeout(()=>toast.classList.remove('show'),1500);
+}
+const audio=document.getElementById('audio-player'),
+playIcon=document.getElementById('play-icon'),
+progress=document.getElementById('progress'),
+playlist=document.querySelector('.playlist');
+let currentSongIndex=0,isPlaying=false;
+const songs=musicFiles.map((file,i)=>({
+src:placeholderMp3[i%placeholderMp3.length],
+cover:'https://files.catbox.moe/m772v3.jpg',
+title:file.replace(/\.mp3$/,'').replace(/ Remix$/,'')
+}));
+function renderPlaylist(start=0,count=10){
+const fragment=document.createDocumentFragment();
+songs.slice(start,start+count).forEach((song,i)=>{
+const item=document.createElement('div');
+item.className='playlist-item';
+item.dataset.src=song.src;
+item.dataset.cover=song.cover;
+item.innerHTML=`<img src="${song.cover}" alt="Cover"><span>${song.title}</span>`;
+item.addEventListener('click',()=>{
+currentSongIndex=start+i;
+loadSong(currentSongIndex);
+if(!isPlaying)togglePlay();
+});
+fragment.appendChild(item);
+});
+playlist.appendChild(fragment);
+}
+renderPlaylist();
+let lastScroll=0;
+playlist.addEventListener('scroll',()=>{
+const scrollTop=playlist.scrollTop;
+if(scrollTop>lastScroll&&scrollTop>playlist.scrollHeight-playlist.clientHeight-100){
+renderPlaylist(playlist.children.length,10);
+}
+lastScroll=scrollTop;
+});
+function loadSong(index){
+audio.src=songs[index].src;
+document.querySelectorAll('.playlist-item').forEach((item,i)=>item.classList.toggle('active',i===index));
+}
+function togglePlay(){
+if(isPlaying){
+audio.pause();
+playIcon.setAttribute('d','M5 3l14 9-14 9V3z');
+}else{
+audio.play().catch(err=>console.error('Play error:',err));
+playIcon.setAttribute('d','M6 4h4v16H6zM14 4h4v16h-4z');
+}
+isPlaying=!isPlaying;
+playSound();
+}
+function nextSong(){
+currentSongIndex=(currentSongIndex+1)%songs.length;
+loadSong(currentSongIndex);
+if(isPlaying)audio.play().catch(err=>console.error('Play error:',err));
+playSound();
+}
+function previousSong(){
+currentSongIndex=(currentSongIndex-1+songs.length)%songs.length;
+loadSong(currentSongIndex);
+if(isPlaying)audio.play().catch(err=>console.error('Play error:',err));
+playSound();
+}
+function updateProgress(){
+if(audio.duration){
+const percentage=(audio.currentTime/audio.duration)*100;
+progress.style.width=percentage+'%';
+}
+}
+let lastSeek=0;
+function seek(event){
+const now=Date.now();
+if(now-lastSeek<100)return;
+lastSeek=now;
+const rect=event.target.getBoundingClientRect(),
+offsetX=event.clientX-rect.left,
+percentage=offsetX/rect.width;
+audio.currentTime=percentage*audio.duration;
+}
+function setVolume(value){
+audio.volume=value;
+}
+loadSong(currentSongIndex);
+function playSound(){
+const sound=document.getElementById('click-sound');
+sound.currentTime=0;
+sound.play().catch(err=>console.error('Sound error:',err));
+}
+const sections=document.querySelectorAll('.section');
+const observer=new IntersectionObserver((entries)=>{
+entries.forEach(entry=>{
+if(entry.isIntersecting)entry.target.classList.add('visible');
+});
+},{threshold:0.1});
+sections.forEach(section=>observer.observe(section));
+</script>
+</body>
+</html>
+</code></pre>
